@@ -11,12 +11,14 @@ import java.io.InputStreamReader;
 // de cada usuario e grava o usuario_melhor_livro.csv (RF5)
 // Em seguida ordena os usuarios com merge sort e grava o usuario_melhor_livro_ordenado.csv (RF9),
 // mostra o top 10 de livros (RF7), faz as consultas do user_id.txt (RF6) e mostra os tempos (RF8)
+// Por ultimo roda a parte experimental com as 3 funcoes hash
 public class Principal {
 
     static final String ARQUIVO_BASE = "Books_rating.csv";
     static final String ARQUIVO_CONSULTA = "user_id.txt";
     static final String ARQUIVO_SAIDA = "usuario_melhor_livro.csv";
     static final String ARQUIVO_SAIDA_ORDENADO = "usuario_melhor_livro_ordenado.csv";
+    static final String ARQUIVO_EXPERIMENTOS = "resultados_experimentos.csv";
 
     // funcao hash usada nas tabelas principais
     static final int HASH_PRINCIPAL = FuncoesHash.FNV1A;
@@ -123,8 +125,15 @@ public class Principal {
         Tela.tempo("Ranking top 10: ", tempoTop10);
         Tela.tempo("Consultas (" + ARQUIVO_CONSULTA + "): ", tempoConsultas);
 
+        // Etapa 8, parte experimental
+        EscritorArquivo saidaExperimentos = new EscritorArquivo(ARQUIVO_EXPERIMENTOS);
+        saidaExperimentos.escreverTexto("conjunto,funcao,colisoes,sondagens_sucesso,sondagens_falha,pior_caso,tempo_insercao_ms,tempo_busca_ms\n");
+        Experimento.executar("Usuarios", usuarios.ids, usuarios.tamanhoId, usuarios.total, saidaExperimentos);
+        Experimento.executar("Titulos", livros.titulos, livros.tamanhoTitulo, livros.total, saidaExperimentos);
+        saidaExperimentos.fechar();
+
         Tela.pularLinha();
-        Tela.linha("Arquivos gerados: " + ARQUIVO_SAIDA + ", " + ARQUIVO_SAIDA_ORDENADO);
+        Tela.linha("Arquivos gerados: " + ARQUIVO_SAIDA + ", " + ARQUIVO_SAIDA_ORDENADO + ", " + ARQUIVO_EXPERIMENTOS);
     }
 
     // Le a base inteira e preenche as duas tabelas e a lista de avaliacoes
