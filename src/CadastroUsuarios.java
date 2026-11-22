@@ -96,4 +96,33 @@ public class CadastroUsuarios {
             }
         }
     }
+
+    // Ordem da lista ordenada (RF9), devolve 1 se o usuario "a" deve vir antes do "b"
+    // Vem antes quem tem maior media_livro, se empatar quem tem maior N_livro
+    // e se empatar de novo o User_id que vem antes em ordem alfabetica
+    int vemAntes(int a, int b, CadastroLivros livros) {
+        int livroA = melhorLivro[a];
+        int livroB = melhorLivro[b];
+
+        int resultado = livros.compararMedias(livroA, livroB);
+        if (resultado > 0) {
+            return 1;
+        }
+        if (resultado < 0) {
+            return 0;
+        }
+
+        if (livros.quantidade[livroA] > livros.quantidade[livroB]) {
+            return 1;
+        }
+        if (livros.quantidade[livroA] < livros.quantidade[livroB]) {
+            return 0;
+        }
+
+        int ordem = Utilitarios.compararChaves(ids[a], tamanhoId[a], ids[b], tamanhoId[b]);
+        if (ordem <= 0) {
+            return 1;
+        }
+        return 0;
+    }
 }

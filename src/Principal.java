@@ -7,13 +7,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 // Programa principal do Trabalho RA3 (Tabelas Hash)
-// Le o Books_rating.csv e monta as tabelas (RF3 e RF4), depois calcula o melhor livro
-// de cada usuario, grava o usuario_melhor_livro.csv (RF5) e faz as consultas do user_id.txt (RF6)
+// Primeiro le o Books_rating.csv e monta as tabelas (RF3 e RF4), depois calcula o melhor livro
+// de cada usuario e grava o usuario_melhor_livro.csv (RF5)
+// Em seguida ordena os usuarios com merge sort e grava o usuario_melhor_livro_ordenado.csv (RF9),
+// mostra o top 10 de livros (RF7), faz as consultas do user_id.txt (RF6) e mostra os tempos (RF8)
 public class Principal {
 
     static final String ARQUIVO_BASE = "Books_rating.csv";
     static final String ARQUIVO_CONSULTA = "user_id.txt";
     static final String ARQUIVO_SAIDA = "usuario_melhor_livro.csv";
+    static final String ARQUIVO_SAIDA_ORDENADO = "usuario_melhor_livro_ordenado.csv";
 
     // funcao hash usada nas tabelas principais
     static final int HASH_PRINCIPAL = FuncoesHash.FNV1A;
@@ -81,19 +84,47 @@ public class Principal {
         fim = System.nanoTime();
         double tempoGravacao = (fim - inicio) / 1000000.0;
 
-        // Etapa 4, consultas
+        // Etapa 4, ordenacao com merge sort
+        int[] ordenado = new int[usuarios.total];
+        for (int i = 0; i < usuarios.total; i++) {
+            ordenado[i] = i;
+        }
+        inicio = System.nanoTime();
+        Ordenacao.ordenarUsuarios(ordenado, usuarios.total, usuarios, livros);
+        fim = System.nanoTime();
+        double tempoOrdenacao = (fim - inicio) / 1000000.0;
+
+        inicio = System.nanoTime();
+        gravarArquivo(ARQUIVO_SAIDA_ORDENADO, ordenado, usuarios, livros);
+        fim = System.nanoTime();
+        double tempoGravacaoOrdenado = (fim - inicio) / 1000000.0;
+
+        // Etapa 5, top 10 livros com N >= 100
+        inicio = System.nanoTime();
+        mostrarTop10(livros);
+        fim = System.nanoTime();
+        double tempoTop10 = (fim - inicio) / 1000000.0;
+
+        // Etapa 6, consultas
         inicio = System.nanoTime();
         fazerConsultas(usuarios, livros);
         fim = System.nanoTime();
         double tempoConsultas = (fim - inicio) / 1000000.0;
 
-        // tempos de cada etapa
+        // Etapa 7, tempos de cada etapa
         Tela.pularLinha();
         Tela.linha("=== Tempos de cada etapa ===");
         Tela.tempo("Leitura e indexacao: ", tempoLeitura);
         Tela.tempo("Calculo do melhor livro: ", tempoMelhorLivro);
+        Tela.tempo("Ordenacao (merge sort): ", tempoOrdenacao);
         Tela.tempo("Gravacao de " + ARQUIVO_SAIDA + ": ", tempoGravacao);
+        Tela.tempo("Gravacao de " + ARQUIVO_SAIDA_ORDENADO + ": ", tempoGravacaoOrdenado);
+        Tela.tempo("Gravacao dos arquivos (total): ", tempoGravacao + tempoGravacaoOrdenado);
+        Tela.tempo("Ranking top 10: ", tempoTop10);
         Tela.tempo("Consultas (" + ARQUIVO_CONSULTA + "): ", tempoConsultas);
+
+        Tela.pularLinha();
+        Tela.linha("Arquivos gerados: " + ARQUIVO_SAIDA + ", " + ARQUIVO_SAIDA_ORDENADO);
     }
 
     // Le a base inteira e preenche as duas tabelas e a lista de avaliacoes
@@ -152,6 +183,44 @@ public class Principal {
             escritor.escreverCaractere('\n');
         }
         escritor.fechar();
+    }
+
+    // Ranking dos 10 livros de maior media com N >= 100 (RF7)
+    // Faz 10 passadas e em cada uma escolhe o melhor livro que ainda nao foi escolhido
+    // O desempate e igual ao do melhor livro, maior N e depois titulo em ordem alfabetica
+    static void mostrarTop10(CadastroLivros livros) {
+        int[] jaEscolhido = new int[livros.total];
+
+        Tela.pularLinha();
+        Tela.linha("=== Top 10 livros de maior media (N >= 100) ===");
+
+        for (int posicao = 1; posicao <= 10; posicao++) {
+            int melhor = -1;
+            for (int i = 0; i < livros.total; i++) {
+                if (livros.quantidade[i] >= 100 && jaEscolhido[i] == 0) {
+                    if (melhor == -1) {
+                        melhor = i;
+                    } else if (livros.compararLivros(i, melhor) > 0) {
+                        melhor = i;
+                    }
+                }
+            }
+
+            if (melhor == -1) {
+                Tela.linha("(nao ha mais livros com N >= 100)");
+                return;
+            }
+
+            jaEscolhido[melhor] = 1;
+            Tela.inteiro(posicao);
+            Tela.texto(". ");
+            Tela.chave(livros.titulos[melhor], livros.tamanhoTitulo[melhor]);
+            Tela.texto(" | media ");
+            Tela.decimal(livros.media(melhor), 4);
+            Tela.texto(" | N = ");
+            Tela.inteiro(livros.quantidade[melhor]);
+            Tela.pularLinha();
+        }
     }
 
     // Consulta pontual (RF6), le o user_id.txt (um User_id por linha) e mostra

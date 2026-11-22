@@ -3,7 +3,7 @@
 
 // As tres funcoes hash pedidas no trabalho (RF1)
 // Todas recebem a chave como vetor de char e o tamanho (quantidade de caracteres validos),
-// porque o atributo length dos vetores nao pode ser usado
+// porque o trabalho nao deixa pegar o tamanho do vetor pronto
 // As contas sao feitas com int de 32 bits e o estouro e esperado e faz parte das funcoes
 public class FuncoesHash {
 

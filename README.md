@@ -19,6 +19,9 @@ nenhuma estrutura ou método pronto do Java.
 | RF4 – descarte de linhas inválidas | `Principal.lerBase` |
 | RF5 – `usuario_melhor_livro.csv` | `Principal.gravarArquivo` |
 | RF6 – consultas do `user_id.txt` | `Principal.fazerConsultas` |
+| RF7 – top 10 livros com N ≥ 100 | `Principal.mostrarTop10` |
+| RF8 – tempo de cada etapa (`System.nanoTime`) | `Principal.main` |
+| RF9 – lista ordenada com merge sort | `Ordenacao.java` |
 
 Arquivos auxiliares: `LeitorCsv.java` (leitura do CSV tratando aspas), `EscritorArquivo.java`
 (gravação), `Utilitarios.java` (comparação de chaves e conversão de números à mão),
@@ -50,10 +53,11 @@ Para conferir as funções hash com os valores do enunciado (chave "Ana"):
 java -cp bin TesteFuncoesHash
 ```
 
-## Arquivo gerado
+## Arquivos gerados
 
-- `usuario_melhor_livro.csv` – um usuário por linha, na ordem em que apareceram no arquivo,
-  com as colunas User_id, profileName, Title, media_livro, N_livro e nota_usuario
+- `usuario_melhor_livro.csv` – um usuário por linha, na ordem em que apareceram no arquivo
+- `usuario_melhor_livro_ordenado.csv` – mesma coisa, em ordem decrescente de média
+  (desempate: maior N, depois User_id em ordem alfabética)
 
 ## Regras adotadas
 

@@ -2,7 +2,7 @@
 // Gabriel Naumann Jeronimo de Moura e Gabriel Pacheco Benin
 
 // No da lista encadeada que fica em cada posicao da tabela hash
-// Guarda a chave, o tamanho da chave (usado no lugar de chave.length),
+// Guarda a chave, o tamanho da chave (quantos caracteres ela tem),
 // o indice onde estao os dados dessa chave no cadastro e a referencia para o proximo no
 public class No {
     char[] chave; // chave guardada
