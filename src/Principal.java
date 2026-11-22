@@ -1,13 +1,19 @@
 // Trabalho RA3 de Tabelas Hash
 // Gabriel Naumann Jeronimo de Moura e Gabriel Pacheco Benin
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 // Programa principal do Trabalho RA3 (Tabelas Hash)
-// Por enquanto le o Books_rating.csv, monta a tabela de livros (RF3) e conta as linhas descartadas (RF4)
+// Le o Books_rating.csv e monta as tabelas (RF3 e RF4), depois calcula o melhor livro
+// de cada usuario, grava o usuario_melhor_livro.csv (RF5) e faz as consultas do user_id.txt (RF6)
 public class Principal {
 
     static final String ARQUIVO_BASE = "Books_rating.csv";
+    static final String ARQUIVO_CONSULTA = "user_id.txt";
+    static final String ARQUIVO_SAIDA = "usuario_melhor_livro.csv";
 
     // funcao hash usada nas tabelas principais
     static final int HASH_PRINCIPAL = FuncoesHash.FNV1A;
@@ -21,6 +27,8 @@ public class Principal {
 
     public static void main(String[] args) throws IOException {
         CadastroLivros livros = new CadastroLivros(HASH_PRINCIPAL);
+        CadastroUsuarios usuarios = new CadastroUsuarios(HASH_PRINCIPAL);
+        ListaAvaliacoes avaliacoes = new ListaAvaliacoes();
 
         double inicio;
         double fim;
@@ -28,7 +36,7 @@ public class Principal {
         // Etapa 1, leitura e indexacao
         Tela.linha("Lendo o arquivo " + ARQUIVO_BASE + " ...");
         inicio = System.nanoTime();
-        lerBase(livros);
+        lerBase(livros, usuarios, avaliacoes);
         fim = System.nanoTime();
         double tempoLeitura = (fim - inicio) / 1000000.0;
 
@@ -50,18 +58,48 @@ public class Principal {
         Tela.texto("Total descartado: ");
         Tela.inteiro(descartadosSemUsuario + descartadosSemTitulo + descartadosNotaInvalida);
         Tela.pularLinha();
+        Tela.texto("Usuarios distintos: ");
+        Tela.inteiro(usuarios.total);
+        Tela.pularLinha();
         Tela.texto("Titulos distintos: ");
         Tela.inteiro(livros.total);
         Tela.pularLinha();
 
+        // Etapa 2, calculo do melhor livro
+        inicio = System.nanoTime();
+        usuarios.calcularMelhoresLivros(avaliacoes, livros);
+        fim = System.nanoTime();
+        double tempoMelhorLivro = (fim - inicio) / 1000000.0;
+
+        // Etapa 3, gravacao do arquivo na ordem em que os usuarios apareceram
+        int[] ordemOriginal = new int[usuarios.total];
+        for (int i = 0; i < usuarios.total; i++) {
+            ordemOriginal[i] = i;
+        }
+        inicio = System.nanoTime();
+        gravarArquivo(ARQUIVO_SAIDA, ordemOriginal, usuarios, livros);
+        fim = System.nanoTime();
+        double tempoGravacao = (fim - inicio) / 1000000.0;
+
+        // Etapa 4, consultas
+        inicio = System.nanoTime();
+        fazerConsultas(usuarios, livros);
+        fim = System.nanoTime();
+        double tempoConsultas = (fim - inicio) / 1000000.0;
+
+        // tempos de cada etapa
         Tela.pularLinha();
+        Tela.linha("=== Tempos de cada etapa ===");
         Tela.tempo("Leitura e indexacao: ", tempoLeitura);
+        Tela.tempo("Calculo do melhor livro: ", tempoMelhorLivro);
+        Tela.tempo("Gravacao de " + ARQUIVO_SAIDA + ": ", tempoGravacao);
+        Tela.tempo("Consultas (" + ARQUIVO_CONSULTA + "): ", tempoConsultas);
     }
 
-    // Le a base inteira e preenche a tabela de livros
+    // Le a base inteira e preenche as duas tabelas e a lista de avaliacoes
     // Linhas sem User_id, sem Title ou com nota invalida sao descartadas e contadas (RF4)
     // Linha com profileName vazio NAO e descartada
-    static void lerBase(CadastroLivros livros) throws IOException {
+    static void lerBase(CadastroLivros livros, CadastroUsuarios usuarios, ListaAvaliacoes avaliacoes) throws IOException {
         LeitorCsv leitor = new LeitorCsv(ARQUIVO_BASE);
 
         // a primeira linha e o cabecalho
@@ -79,11 +117,106 @@ public class Principal {
                 if (nota < 0) {
                     descartadosNotaInvalida = descartadosNotaInvalida + 1;
                 } else {
-                    livros.registrar(leitor.titulo, leitor.tamanhoTitulo, nota);
+                    int livro = livros.registrar(leitor.titulo, leitor.tamanhoTitulo, nota);
+                    int usuario = usuarios.registrar(leitor.usuario, leitor.tamanhoUsuario,
+                                                     leitor.nome, leitor.tamanhoNome);
+                    avaliacoes.adicionar(usuario, livro, nota);
                     registrosValidos = registrosValidos + 1;
                 }
             }
         }
         leitor.fechar();
+    }
+
+    // Grava um arquivo com as colunas do RF5, seguindo a ordem do vetor "ordem"
+    static void gravarArquivo(String nomeArquivo, int[] ordem, CadastroUsuarios usuarios,
+                              CadastroLivros livros) throws IOException {
+        EscritorArquivo escritor = new EscritorArquivo(nomeArquivo);
+        escritor.escreverTexto("User_id,profileName,Title,media_livro,N_livro,nota_usuario\n");
+
+        for (int k = 0; k < usuarios.total; k++) {
+            int u = ordem[k];
+            int livro = usuarios.melhorLivro[u];
+
+            escritor.escreverCampoCsv(usuarios.ids[u], usuarios.tamanhoId[u]);
+            escritor.escreverCaractere(',');
+            escritor.escreverCampoCsv(usuarios.nomes[u], usuarios.tamanhoNome[u]);
+            escritor.escreverCaractere(',');
+            escritor.escreverCampoCsv(livros.titulos[livro], livros.tamanhoTitulo[livro]);
+            escritor.escreverCaractere(',');
+            escritor.escreverDecimal(livros.media(livro), 4);
+            escritor.escreverCaractere(',');
+            escritor.escreverInteiro(livros.quantidade[livro]);
+            escritor.escreverCaractere(',');
+            escritor.escreverDecimal(usuarios.notaUsuario[u], 1);
+            escritor.escreverCaractere('\n');
+        }
+        escritor.fechar();
+    }
+
+    // Consulta pontual (RF6), le o user_id.txt (um User_id por linha) e mostra
+    // o profileName e o melhor livro de cada usuario
+    static void fazerConsultas(CadastroUsuarios usuarios, CadastroLivros livros) {
+        Tela.pularLinha();
+        Tela.linha("=== Consultas do arquivo " + ARQUIVO_CONSULTA + " ===");
+
+        try {
+            BufferedReader leitor = new BufferedReader(
+                    new InputStreamReader(new FileInputStream(ARQUIVO_CONSULTA), "UTF-8"));
+            char[] linha = new char[1000];
+            int tamanho = 0;
+
+            int lido = leitor.read();
+            while (lido != -1) {
+                char c = (char) lido;
+                if (c == '\n') {
+                    consultarUsuario(linha, tamanho, usuarios, livros);
+                    tamanho = 0;
+                } else if (c != '\r' && c != ' ' && c != '\t' && c != 65279) {
+                    // ignora espacos, \r e o caractere 65279 (BOM), que o Bloco de Notas as vezes coloca no inicio
+                    if (tamanho < 1000) {
+                        linha[tamanho] = c;
+                        tamanho = tamanho + 1;
+                    }
+                }
+                lido = leitor.read();
+            }
+            // ultima linha sem \n no final
+            consultarUsuario(linha, tamanho, usuarios, livros);
+            leitor.close();
+        } catch (IOException erro) {
+            Tela.linha("Nao foi possivel ler o arquivo " + ARQUIVO_CONSULTA);
+        }
+    }
+
+    static void consultarUsuario(char[] id, int tamanho, CadastroUsuarios usuarios, CadastroLivros livros) {
+        if (tamanho == 0) {
+            return; // linha em branco
+        }
+
+        Tela.texto("User_id: ");
+        Tela.chave(id, tamanho);
+
+        int u = usuarios.tabela.buscar(id, tamanho);
+        if (u == -1) {
+            Tela.linha(" -> usuario nao encontrado");
+            return;
+        }
+
+        int livro = usuarios.melhorLivro[u];
+        Tela.pularLinha();
+        Tela.texto("   profileName: ");
+        Tela.chave(usuarios.nomes[u], usuarios.tamanhoNome[u]);
+        Tela.pularLinha();
+        Tela.texto("   Melhor livro: ");
+        Tela.chave(livros.titulos[livro], livros.tamanhoTitulo[livro]);
+        Tela.pularLinha();
+        Tela.texto("   Media do livro: ");
+        Tela.decimal(livros.media(livro), 4);
+        Tela.texto(" | N = ");
+        Tela.inteiro(livros.quantidade[livro]);
+        Tela.texto(" | nota do usuario: ");
+        Tela.decimal(usuarios.notaUsuario[u], 1);
+        Tela.pularLinha();
     }
 }
