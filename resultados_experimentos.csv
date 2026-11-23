@@ -1,0 +1,7 @@
+conjunto,funcao,colisoes,sondagens_sucesso,sondagens_falha,pior_caso,tempo_insercao_ms,tempo_busca_ms
+Usuarios,FNV1a,373603,1.5038,1.0076,8,130.703,186.409
+Usuarios,Polinomial 31,373726,1.5049,1.0082,9,162.109,173.782
+Usuarios,djb2,373726,1.5042,1.0106,8,138.585,150.409
+Titulos,FNV1a,20130,1.1042,0.2064,5,32.960,28.362
+Titulos,Polinomial 31,20001,1.1035,0.2070,5,15.290,21.782
+Titulos,djb2,19895,1.1032,0.2082,5,15.395,21.602
