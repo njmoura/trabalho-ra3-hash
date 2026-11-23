@@ -5,7 +5,7 @@ Disciplina: Resolução de Problemas Estruturados em Computação – Prof. Andr
 Integrantes: Gabriel Naumann Jerônimo de Moura e Gabriel Pacheco Benin
 
 - Repositório: https://github.com/njmoura/trabalho-ra3-hash
-- Vídeo: https://www.youtube.com/watch?v=1etWPc1IcH8
+- Vídeo: https://youtu.be/jEyI05FzMJs
 
 ## O que o programa faz
 
